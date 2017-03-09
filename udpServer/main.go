@@ -2,49 +2,43 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 )
 
 func main() {
-	var s []byte
-	s = make([]byte, 0, 2048)
-	t := "hahahaha--"
-	for i := 0; i < 1000000; i++ {
-		s = append(s, t...)
-		if len(s) > 1024 {
-			break
-		}
-	}
-	fmt.Println(len(s))
-	// 创建监听
+	// ListenUDP
+	ipaddr := "0.0.0.0"
+	port := 8080
 	socket, err := net.ListenUDP("udp4", &net.UDPAddr{
-		IP:   net.IPv4(0, 0, 0, 0),
-		Port: 8080,
+		IP:   net.ParseIP(ipaddr),
+		Port: port,
 	})
 	if err != nil {
-		fmt.Println("监听失败!", err)
+		log.Println("Listen error!", err)
 		return
 	}
+	log.Println("Listen on:", port)
+
 	defer socket.Close()
 
 	for {
-		// 读取数据
+		// read data
 		data := make([]byte, 100)
-		read, remoteAddr, err := socket.ReadFromUDP(data)
+		size, remoteAddr, err := socket.ReadFromUDP(data)
 		if err != nil {
-			fmt.Println("读取数据失败!", err)
+			log.Println("read data error!", err)
 			continue
 		}
-		fmt.Println(read, remoteAddr)
-		fmt.Printf("%s\n\n", data)
+		msg := fmt.Sprintf("from [%s] received %d bytes: \n%s\n", remoteAddr, size, data)
+		log.Print(msg)
 
-		// 发送数据
-		//senddata := []byte("hello client!")
-		senddata := s
-		_, err = socket.WriteToUDP(senddata, remoteAddr)
+		// send data
+		_, err = socket.WriteToUDP([]byte(msg), remoteAddr)
 		if err != nil {
-			return
-			fmt.Println("发送数据失败!", err)
+			log.Println("send data error!", err)
+		} else {
+			log.Println("reply ok")
 		}
 	}
 }

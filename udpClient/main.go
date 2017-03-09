@@ -10,41 +10,37 @@ import (
 )
 
 func send(msg []byte) {
-	// 创建连接
+	// dial udp server
+	ipaddr := "127.0.0.1"
+	port := 8080
 	socket, err := net.DialUDP("udp4", nil, &net.UDPAddr{
-		IP:   net.IPv4(104, 207, 150, 187),
-		Port: 8080,
+		IP:   net.ParseIP(ipaddr),
+		Port: port,
 	})
 	if err != nil {
-		fmt.Println("连接失败!", err)
+		fmt.Println("connect error!", err)
 		return
 	}
-	socket.SetDeadline(time.Now().Add(2 * time.Second))
+	socket.SetWriteDeadline(time.Now().Add(2 * time.Second))
+	socket.SetReadDeadline(time.Now().Add(2 * time.Second))
 	defer socket.Close()
 
 	// 发送数据
-	//senddata := []byte("hello server!")
 	_, err = socket.Write(msg)
 	if err != nil {
-		fmt.Println("发送数据失败!", err)
+		fmt.Println("send data error!", err)
 		return
 	}
 
 	// 接收数据
 	data := bytes.NewBuffer(nil)
 	var buf [128]byte
-	var remoteAddr interface{}
-	for {
-		n, addr, err := socket.ReadFromUDP(buf[0:])
-		data.Write(buf[0:n])
-		if err != nil {
-			fmt.Println("读取数据失败!", err)
-			break
-		}
-		remoteAddr = addr
+	n, err := socket.Read(buf[0:])
+	data.Write(buf[0:n])
+	if err != nil {
+		fmt.Println("read data error!", err)
 	}
 	result := data.Bytes()
-	fmt.Println(len(result), remoteAddr)
 	fmt.Printf("%s\n", string(result))
 }
 
